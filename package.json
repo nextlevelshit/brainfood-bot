@@ -4,5 +4,8 @@
   "main": "index.js",
   "repository": "git@github.com:nextlevelshit/brainfood-bot.git",
   "author": "Michael Czechowski <mail@dailysh.it>",
-  "license": "GPL-2.0"
+  "license": "GPL-2.0",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.27.1"
+  }
 }
