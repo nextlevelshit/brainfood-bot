@@ -8,9 +8,11 @@ const bot = new TelegramBot(config.telegram.token, {polling: true});
 const T = new Twit(config.twitter);
 
 bot.on('text', (msg) => {
+      console.log(msg.chat.id);
   if (msg.entities) {
     if (msg.entities[0].type === 'url') {
       let status = `[${msg.chat.title}] ${msg.text}`;
+
 
       T.post('statuses/update', { status: status }, (error, data, response) => {
         if (error) {
@@ -20,4 +22,10 @@ bot.on('text', (msg) => {
       });
     }
   }
+});
+
+T.stream('user').on('quoted_tweet', function (event) {
+  let status = `[${event.source.name}] ${event.target_object.text}`;
+  bot.sendMessage('-169241561', status);
+  console.log(status);
 });
