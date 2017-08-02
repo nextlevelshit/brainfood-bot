@@ -1,0 +1,8 @@
+{
+  "name": "brainfood-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:nextlevelshit/brainfood-bot.git",
+  "author": "Michael Czechowski <mail@dailysh.it>",
+  "license": "GPL-2.0"
+}
