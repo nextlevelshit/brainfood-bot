@@ -6,7 +6,8 @@
   "author": "Michael Czechowski <mail@dailysh.it>",
   "license": "GPL-2.0",
   "dependencies": {
-    "node-telegram-bot-api": "^0.27.1"
+    "node-telegram-bot-api": "^0.27.1",
+    "twit": "^2.2.9"
   },
   "scripts": {
     "revive": "node index.js"
