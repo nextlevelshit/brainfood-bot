@@ -1,15 +1,21 @@
 {
-  "name": "brainfood-bot",
-  "version": "1.0.0",
+  "name": "nls-wggesucht-bot",
+  "version": "0.0.1",
   "main": "index.js",
-  "repository": "git@github.com:nextlevelshit/brainfood-bot.git",
+  "repository": "git@github.com:nextlevelshit/nls-wggesucht-bot.git",
   "author": "Michael Czechowski <mail@dailysh.it>",
   "license": "GPL-2.0",
   "dependencies": {
-    "node-telegram-bot-api": "^0.27.1",
-    "twit": "^2.2.9"
+    "cheerio": "^1.0.0-rc.2",
+    "https": "^1.0.0",
+    "lodash": "^4.17.10",
+    "telegraf": "^3.21.2"
   },
   "scripts": {
-    "revive": "node index.js"
+    "start": "node index.js",
+    "init": "cp config_example.json config.json && echo config.json was created, please open the file and insert your Telegram API Token."
+  },
+  "bin": {
+    "wggesucht": "./bin/wggesucht.js"
   }
 }
