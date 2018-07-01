@@ -3,6 +3,7 @@ const Telegraf = require('telegraf')
 const _ = require('lodash')
 const https = require('https')
 const cheerio = require('cheerio')
+const url = require('url')
 // Local libraries and configurations
 const config = require('./config')
 const bot = new Telegraf(config.telegram.token)
@@ -17,15 +18,24 @@ bot.start((ctx) => {
   sendWelcome()
 })
 
+bot.command('refresh', (ctx) => {
+  setConnection(ctx)
+
+  console.log(`[refreshing entry list]: ${connection.update.message.from.first_name}`)
+
+  crawl(config.url)
+})
+
 bot.startPolling()
 
 function startCrawler() {
-  console.log('[new user connected]')
-  console.log(connection.update.message.from)
+  console.log(`[new connection]: ${connection.update.message.from.first_name}`)
 
   crawl(config.url)
 
-  setTimeout(crawl, config.interval, config.url)
+  setInterval(() => {
+    crawl(config.url)
+  }, config.interval)
 }
 
 function sendWelcome() {
@@ -36,11 +46,13 @@ Sobald neue Inserate verfügbar sind, sende ich dir eine Nachricht. Viel Glück 
 }
 
 function crawl(url) {
+  console.log('[starting crawler]')
+
   https.get(url, (res) => {
     let data = ''
 
     res.on('data', (chunk) => { data += chunk })
-    res.on('end', () => { checkNewEntries(data) });
+    res.on('end', () => { checkNewEntries(data) })
 
   }).on('error', (err) => {
     console.error(`Error:${err.message}`)
@@ -48,18 +60,19 @@ function crawl(url) {
 }
 
 function checkNewEntries(data) {
-  let newEntries = _.difference(parseEntries(data), entries)
+  let results = _.differenceWith(parseEntries(data), entries, _.isEqual)
 
-  if (!newEntries) {
-    console.warn('[no new entries]')
-    return
-  }
+  console.log('[new results]')
+  console.log(results)
 
-  newEntries.forEach(item => {
+  results.forEach(item => {
     sendNewEntry(item)
   })
 
-  entries = _.uniqBy([...newEntries, ...entries], 'url')
+  entries = [...results, ...entries]
+
+  console.log(`[current entry list]: ${connection.update.message.from.first_name}`)
+  console.log(entries)
 }
 
 function parseEntries(content) {
