@@ -8,85 +8,94 @@ const url = require('url')
 const config = require('./config')
 const bot = new Telegraf(config.telegram.token)
 
-let entries = []
-let connection = null
-let httpResponse = null
+let connection
+let httpResponse
+let sessions = []
 
 bot.start((ctx) => {
-  setConnection(ctx)
-  startCrawler()
-  sendWelcome()
+  let id = ctx.update.message.from.id
+
+  setConnection(ctx, id)
+  setUrl(config.url, id)
+  startCrawler(id)
+  sendWelcome(id)
 })
 
 bot.command('refresh', (ctx) => {
+  let id = ctx.update.message.from.id
+
+  console.log(`[refreshing entry list]: ${id}`)
+
   setConnection(ctx)
-
-  console.log(`[refreshing entry list]: ${connection.update.message.from.first_name}`)
-
-  crawl(config.url)
+  crawl(sessions[id].url)
 })
 
 bot.startPolling()
 
-function startCrawler() {
-  console.log(`[new connection]: ${connection.update.message.from.first_name}`)
+function startCrawler(id) {
+  console.log(`[new connection]: ${id}`)
 
-  crawl(config.url)
+  crawl(id, checkNewEntries)
 
   setInterval(() => {
-    crawl(config.url)
+    crawl(id, checkNewEntries)
   }, config.interval)
 }
 
-function sendWelcome() {
-  connection.replyWithMarkdown(`
+function setUrl(url, id) {
+  sessions[id].url = url
+}
+
+function sendWelcome(id) {
+  sessions[id].ctx.replyWithMarkdown(`
 *Soeben hast du den WG-Gesucht Bot gestartet.*
 Sobald neue Inserate verfügbar sind, sende ich dir eine Nachricht. Viel Glück bei der Suche!
   `)
 }
 
-function crawl(url) {
-  console.log('[starting crawler]')
+function crawl(id, callback) {
+  console.log(`[starting crawler: ${id}]`)
 
-  https.get(url, (res) => {
+  https.get(sessions[id].url, (res) => {
     let data = ''
 
     res.on('data', (chunk) => { data += chunk })
-    res.on('end', () => { checkNewEntries(data) })
+    res.on('end', () => { callback(data, id) })
 
   }).on('error', (err) => {
     console.error(`Error:${err.message}`)
   });
 }
 
-function checkNewEntries(data) {
-  let results = _.differenceWith(parseEntries(data), entries, _.isEqual)
+function checkNewEntries(data, id) {
+  let resultList = _.differenceWith(parseEntries(data), sessions[id].entries, _.isEqual)
 
-  console.log('[new results]')
-  console.log(results)
+  if (resultList.length > 0) {
+    console.log(`[new results: ${id}]`)
+    console.log(resultList)
+  } else [
+    console.log(`[no new results: ${id}]`)
+  ]
 
-  results.forEach(item => {
-    sendNewEntry(item)
+  resultList.forEach(item => {
+    sendNewEntry(item, id)
   })
 
-  entries = [...results, ...entries]
-
-  console.log(`[current entry list]: ${connection.update.message.from.first_name}`)
-  console.log(entries)
+  sessions[id].entries = [...resultList, ...sessions[id].entries]
 }
 
 function parseEntries(content) {
   const $ = cheerio.load(content);
-  let entries = [];
+  let resultList = [];
 
   $('[id^=liste-details-ad]').not('.display-none').each(function(i, item) {
     let result = {
       url: config.urlPrefix + $(item).find('a.detailansicht').attr('href')
     }
-    entries.push(result)
+    resultList.push(result)
   });
 
-  return entries
+  return resultList
 }
 
 /**
@@ -99,15 +108,15 @@ function parseEntries(content) {
  * }
  */
 
-function sendNewEntry(entry) {
-  connection.reply(entry.url);
+function sendNewEntry(entry, id) {
+  sessions[id].ctx.reply(entry.url);
 }
 
-function httpRequest() {
-  return 
-}
-
-function setConnection(ctx) {
-  connection = ctx
+function setConnection(ctx, id) {
+  sessions[id] = {
+    ctx: ctx,
+    url: null,
+    entries: []
+  }
 }
 
