@@ -21,19 +21,30 @@ bot.start((ctx) => {
   sendWelcome(id)
 })
 
-bot.command('refresh', (ctx) => {
+bot.on('text', (ctx) => {
   let id = ctx.update.message.from.id
+  let url = ctx.message.text
 
-  console.log(`[refreshing entry list]: ${id}`)
+  if (!sessions[id]) {
+    ctx.replyWithMarkdown(`**Du hast deinen Bot noch nicht aktiviert**\n\rBitte starte ihn zunächst indem du **/start** an ihn sendest.`)
+    return
+  }
 
-  setConnection(ctx)
-  crawl(sessions[id].url)
+  if (url.indexOf(config.urlPrefix) !== 0) {
+    ctx.replyWithMarkdown(`**Keine gültige Adresse**\n\rDie Seite mit den Suchergebnissen muss mit \`${config.urlPrefix}\` beginnen. Bitte versuche es nochmal.`)
+    return
+  }
+
+  setUrl(url, id)
+  crawl(id, checkNewEntries)
+
+  console.log(`[${id}] Url Changed: ${ctx.message.text}`)
 })
 
 bot.startPolling()
 
 function startCrawler(id) {
-  console.log(`[new connection]: ${id}`)
+  console.log(`[${id}] Connected`)
 
   crawl(id, checkNewEntries)
 
@@ -47,14 +58,11 @@ function setUrl(url, id) {
 }
 
 function sendWelcome(id) {
-  sessions[id].ctx.replyWithMarkdown(`
-*Soeben hast du den WG-Gesucht Bot gestartet.*
-Sobald neue Inserate verfügbar sind, sende ich dir eine Nachricht. Viel Glück bei der Suche!
-  `)
+  sessions[id].ctx.replyWithMarkdown(`*Soeben hast du den WG-Gesucht Bot gestartet.*\n\rSobald neue Inserate verfügbar sind, sende ich dir eine Nachricht. Viel Glück bei der Suche!`)
 }
 
 function crawl(id, callback) {
-  console.log(`[starting crawler: ${id}]`)
+  console.log(`[${id}] Starting`)
 
   https.get(sessions[id].url, (res) => {
     let data = ''
@@ -63,7 +71,7 @@ function crawl(id, callback) {
     res.on('end', () => { callback(data, id) })
 
   }).on('error', (err) => {
-    console.error(`Error:${err.message}`)
+    console.error(`Error: ${err.message}`)
   });
 }
 
@@ -71,11 +79,9 @@ function checkNewEntries(data, id) {
   let resultList = _.differenceWith(parseEntries(data), sessions[id].entries, _.isEqual)
 
   if (resultList.length > 0) {
-    console.log(`[new results: ${id}]`)
+    console.log(`[${id}] New Result List`)
     console.log(resultList)
-  } else [
-    console.log(`[no new results: ${id}]`)
-  ]
+  }
 
   resultList.forEach(item => {
     sendNewEntry(item, id)
