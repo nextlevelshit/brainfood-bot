@@ -1,12 +1,15 @@
 // External libraries
 const Telegraf = require('telegraf')
 const _ = require('lodash')
+const request = require('request')
 const https = require('https')
 const cheerio = require('cheerio')
 const url = require('url')
+var HttpsProxyAgent = require('https-proxy-agent')
 // Local libraries and configurations
 const config = require('./config')
-const bot = new Telegraf(config.telegram.token)
+const bot = new Telegraf(config.telegram.token) 
+const agent = new HttpsProxyAgent(config.proxy)
 
 let connection
 let httpResponse
@@ -64,18 +67,33 @@ function sendWelcome(id) {
 function crawl(id, callback) {
   console.log(`[${id}] Starting`)
 
-  https.get(sessions[id].url, (res) => {
-    let data = ''
+  console.log(agent)
 
-    res.on('data', (chunk) => { data += chunk })
-    res.on('end', () => { callback(data, id) })
-
-  }).on('error', (err) => {
-    console.error(`Error: ${err.message}`)
+  https.request({
+    uri: sessions[id].url,
+    agent: agent,
+    timeout: 10000,
+    followRedirect: false,
+    maxRedirects: 10
+  }, function(error, response, body) {
+    console.log("Error" + error)
+    console.log("Response: " + response)
+    console.log("Body: " + body)
   });
+
+  // https.get(sessions[id].url, (res) => {
+  //   let data = ''
+
+  //   res.on('data', (chunk) => { data += chunk })
+  //   res.on('end', () => { callback(data, id) })
+
+  // }).on('error', (err) => {
+  //   console.error(`Error: ${err.message}`)
+  // });
 }
 
 function checkNewEntries(data, id) {
+  console.log(data)
   let resultList = _.differenceWith(parseEntries(data), sessions[id].entries, _.isEqual)
 
   if (resultList.length > 0) {
