@@ -6,13 +6,15 @@
   "author": "Michael Czechowski <mail@dailysh.it>",
   "license": "GPL-2.0",
   "dependencies": {
+    "bluebird": "^3.5.1",
     "cheerio": "^1.0.0-rc.2",
     "http-proxy-agent": "^2.1.0",
     "https": "^1.0.0",
     "https-proxy-agent": "^2.2.1",
     "lodash": "^4.17.10",
     "request": "^2.87.0",
-    "telegraf": "^3.21.2"
+    "telegraf": "^3.21.2",
+    "winston": "^2.4.3"
   },
   "scripts": {
     "start": "node index.js",
