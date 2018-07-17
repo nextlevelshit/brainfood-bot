@@ -6,14 +6,20 @@
   "author": "Michael Czechowski <mail@dailysh.it>",
   "license": "GPL-2.0",
   "dependencies": {
+    "bluebird": "^3.5.1",
     "cheerio": "^1.0.0-rc.2",
+    "http-proxy-agent": "^2.1.0",
     "https": "^1.0.0",
+    "https-proxy-agent": "^2.2.1",
     "lodash": "^4.17.10",
-    "telegraf": "^3.21.2"
+    "request": "^2.87.0",
+    "telegraf": "^3.21.2",
+    "winston": "^2.4.3"
   },
   "scripts": {
     "start": "node index.js",
-    "init": "cp config_example.json config.json && echo config.json was created, please open the file and insert your Telegram API Token."
+    "init": "cp config_example.json config.json && cp scrapoxy_example.json scrapoxy.json",
+    "test": "node test.js"
   },
   "bin": {
     "wggesucht": "./bin/wggesucht.js"

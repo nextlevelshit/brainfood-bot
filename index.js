@@ -1,12 +1,15 @@
 // External libraries
 const Telegraf = require('telegraf')
 const _ = require('lodash')
+const request = require('request')
 const https = require('https')
+const winston = require('winston')
 const cheerio = require('cheerio')
-const url = require('url')
+const Promise = require('bluebird')
 // Local libraries and configurations
 const config = require('./config')
-const bot = new Telegraf(config.telegram.token)
+const crawler = require('./src/crawler')
+const bot = new Telegraf(config.telegram.token) 
 
 let connection
 let httpResponse
@@ -16,7 +19,7 @@ bot.start((ctx) => {
   let id = ctx.update.message.from.id
 
   setConnection(ctx, id)
-  setUrl(config.url, id)
+  setUrl(config.source, id)
   startCrawler(id)
   sendWelcome(id)
 })
@@ -30,21 +33,23 @@ bot.on('text', (ctx) => {
     return
   }
 
-  if (url.indexOf(config.urlPrefix) !== 0) {
-    ctx.replyWithMarkdown(`**Keine gültige Adresse**\n\rDie Seite mit den Suchergebnissen muss mit \`${config.urlPrefix}\` beginnen. Bitte versuche es nochmal.`)
+  if (url.indexOf(config.host) !== 0) {
+    ctx.replyWithMarkdown(`**Keine gültige Adresse**\n\rDie Seite mit den Suchergebnissen muss mit \`${config.host}\` beginnen. Bitte versuche es nochmal.`)
     return
   }
 
   setUrl(url, id)
   crawl(id, checkNewEntries)
 
-  console.log(`[${id}] Url Changed: ${ctx.message.text}`)
+  winston.info(`[${id}] Url Changed: ${ctx.message.text}`)
 })
 
 bot.startPolling()
 
+// HELPER FUNCTIONS
+
 function startCrawler(id) {
-  console.log(`[${id}] Connected`)
+  winston.info(`[${id}] Connected`)
 
   crawl(id, checkNewEntries)
 
@@ -62,26 +67,18 @@ function sendWelcome(id) {
 }
 
 function crawl(id, callback) {
-  console.log(`[${id}] Starting`)
+  winston.info(`[${id}] Starting`)
 
-  https.get(sessions[id].url, (res) => {
-    let data = ''
-
-    res.on('data', (chunk) => { data += chunk })
-    res.on('end', () => { callback(data, id) })
-
-  }).on('error', (err) => {
-    console.error(`Error: ${err.message}`)
-  });
+  crawler(sessions[id].url, config.host, config.opts)
+    .then(urls => {
+      callback(urls, id)
+    }).catch(err => winston.error('Error: ', err))
 }
 
-function checkNewEntries(data, id) {
-  let resultList = _.differenceWith(parseEntries(data), sessions[id].entries, _.isEqual)
+function checkNewEntries(urls, id) {
+  winston.info(`[${id}] Found %d links`, urls.length)
 
-  if (resultList.length > 0) {
-    console.log(`[${id}] New Result List`)
-    console.log(resultList)
-  }
+  let resultList = _.differenceWith(urls, sessions[id].entries, _.isEqual)
 
   resultList.forEach(item => {
     sendNewEntry(item, id)
@@ -90,32 +87,8 @@ function checkNewEntries(data, id) {
   sessions[id].entries = [...resultList, ...sessions[id].entries]
 }
 
-function parseEntries(content) {
-  const $ = cheerio.load(content);
-  let resultList = [];
-
-  $('[id^=liste-details-ad]').not('.display-none').each(function(i, item) {
-    let result = {
-      url: config.urlPrefix + $(item).find('a.detailansicht').attr('href')
-    }
-    resultList.push(result)
-  });
-
-  return resultList
-}
-
-/**
- * Sending new Entry to all followers
- * 
- * @param entry: {
- *  price: number
- *  disctrict: string
- *  url: string
- * }
- */
-
 function sendNewEntry(entry, id) {
-  sessions[id].ctx.reply(entry.url);
+  sessions[id].ctx.reply(entry);
 }
 
 function setConnection(ctx, id) {
