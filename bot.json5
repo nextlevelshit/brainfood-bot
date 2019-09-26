@@ -1,0 +1,16 @@
+{
+  apps : [
+    {
+      name         : "scrapoxy",
+      script       : "scrapoxy",
+      args         : ["start", "scrapoxy.json", "-d"],
+      kill_timeout : 30000,
+    },
+    {
+      name         : "bot",
+      script       : "node",
+      args         : ["index.js"],
+      kill_timeout : 30000,
+    },
+  ],
+}

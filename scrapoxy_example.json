@@ -1,23 +1,21 @@
 {
   "commander": {
-      "password": "YOUR_PASSWORD"
+    "password": "YOUR_PASSWORD"
   },
   "instance": {
-      "port": 3128,
-      "scaling": {
-          "min": 1,
-          "max": 2
-      }
+    "port": 3128,
+    "scaling": {
+      "min": 1,
+      "max": 2
+    }
   },
-  "providers": [
-      {
-          "type": "digitalocean",
-          "token": "",
-          "region": "",
-          "size": "",
-          "sshKeyName": "",
-          "imageName": "",
-          "tags": ""
-      }
-  ]
+  "providers": [{
+    "type": "digitalocean",
+    "token": "",
+    "region": "",
+    "size": "",
+    "sshKeyName": "",
+    "imageName": "",
+    "tags": ""
+  }]
 }
