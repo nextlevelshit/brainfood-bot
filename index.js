@@ -33,6 +33,23 @@ bot.on('text', (ctx) => {
     return
   }
 
+  if(url === '/hold') {
+    killCrawler(id)
+    sessions[id].ctx.replyWithMarkdown(`Dein persönlicher Bot wurde pausiert. Um ihn wieder zu starten, tippe **/start**`)
+    winston.info(`[${id}] Crawler killed by User`)
+    return
+  }
+
+  if(url === '/start') {
+    if (sessions[id].url) {
+      crawl(id, checkNewEntries)
+      winston.info(`[${id}] Url changed: ${ctx.message.text}`)
+    }
+
+    sessions[id].ctx.replyWithMarkdown(`Auf in die nächste Runde. Viel Erfolg bei der Suche!`)
+    return
+  }
+
   if (url.indexOf(config.host) !== 0) {
     ctx.replyWithMarkdown(`**Keine gültige Adresse**\n\rDie Seite mit den Suchergebnissen muss mit \`${config.host}\` beginnen. Bitte versuche es nochmal.`)
     return
@@ -41,7 +58,7 @@ bot.on('text', (ctx) => {
   setUrl(url, id)
   crawl(id, checkNewEntries)
 
-  winston.info(`[${id}] Url Changed: ${ctx.message.text}`)
+  winston.info(`[${id}] Url changed: ${ctx.message.text}`)
 })
 
 bot.startPolling()
@@ -53,7 +70,7 @@ function startCrawler(id) {
 
   crawl(id, checkNewEntries)
 
-  setInterval(() => {
+  sessions[id].crawler = setInterval(() => {
     crawl(id, checkNewEntries)
   }, config.interval)
 }
@@ -89,6 +106,10 @@ function checkNewEntries(urls, id) {
 
 function sendNewEntry(entry, id) {
   sessions[id].ctx.reply(entry);
+}
+
+function killCrawler(id) {
+  clearInterval(sessions[id].crawler);
 }
 
 function setConnection(ctx, id) {

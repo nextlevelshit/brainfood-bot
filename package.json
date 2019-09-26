@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "main": "index.js",
   "repository": "git@github.com:nextlevelshit/nls-wggesucht-bot.git",
-  "author": "Michael Czechowski <mail@dailysh.it>",
+  "author": "Michael Czechowski",
   "license": "GPL-2.0",
   "dependencies": {
     "bluebird": "^3.5.1",
