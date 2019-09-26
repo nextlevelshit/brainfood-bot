@@ -75,7 +75,7 @@ npm run init
 }
 ```
 
-```json
+```json5
 // in bot.json5
 {
   apps : [
